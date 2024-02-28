@@ -2,18 +2,19 @@ package com.yupi.project.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cjj.apiopenplatformclientsdk.client.APIOpenPlatformClient;
+import com.google.gson.Gson;
 import com.yupi.project.annotation.AuthCheck;
-import com.yupi.project.common.BaseResponse;
-import com.yupi.project.common.DeleteRequest;
-import com.yupi.project.common.ErrorCode;
-import com.yupi.project.common.ResultUtils;
+import com.yupi.project.common.*;
 import com.yupi.project.constant.CommonConstant;
 import com.yupi.project.exception.BusinessException;
 import com.yupi.project.model.dto.interfaceinfo.InterfaceInfoAddRequest;
 import com.yupi.project.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.yupi.project.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
+import com.yupi.project.model.dto.interfaceinfo.InterfaceInvokeRequest;
 import com.yupi.project.model.entity.InterfaceInfo;
 import com.yupi.project.model.entity.User;
+import com.yupi.project.model.enums.InterfaceInfoStatusEnum;
 import com.yupi.project.service.InterfaceInfoService;
 import com.yupi.project.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,9 @@ public class InterfaceInfoController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private APIOpenPlatformClient apiOpenPlatformClient;
 
     // region 增删改查
 
@@ -196,4 +200,94 @@ public class InterfaceInfoController {
 
     // endregion
 
+    /**
+     * 发布接口(仅管理员可用)
+     *
+     * @param idRequest
+     * @return
+     */
+    @AuthCheck(mustRole = "admin")
+    @PostMapping("/online")
+    public BaseResponse<Boolean> onlineInterfaceInfo(@RequestBody IdRequest idRequest,
+                                                     HttpServletRequest request) {
+        long id = idRequest.getId();
+        if(idRequest == null || id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 判断接口是否存在
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        if (oldInterfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        //判断接口是否可以调用
+        com.cjj.apiopenplatformclientsdk.model.User user = new com.cjj.apiopenplatformclientsdk.model.User();
+        user.setUsername("zhuxiaoming");
+        String username = apiOpenPlatformClient.getUsernameByPost(user);
+        if(StringUtils.isBlank(username)){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"接口调用失败");
+        }
+        // 仅管理员可修改
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setStatus(InterfaceInfoStatusEnum.ONLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 下线接口(仅管理员可用)
+     *
+     * @param idRequest
+     * @return
+     */
+    @AuthCheck(mustRole = "admin")
+    @PostMapping("/offline")
+    public BaseResponse<Boolean> offlineInterfaceInfo(@RequestBody IdRequest idRequest,
+                                                     HttpServletRequest request) {
+        long id = idRequest.getId();
+        if(idRequest == null || id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 判断接口是否存在
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        if (oldInterfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        // 仅管理员可修改
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setStatus(InterfaceInfoStatusEnum.OFFLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 测试调用接口
+     *
+     * @param interfaceInvokeRequest
+     * @return
+     */
+    @PostMapping("/invoke")
+    public BaseResponse<Object> invokeInterface(@RequestBody InterfaceInvokeRequest interfaceInvokeRequest,
+                                                      HttpServletRequest request) {
+        if(interfaceInvokeRequest == null || interfaceInvokeRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = interfaceInvokeRequest.getId();
+        // 判断接口是否存在
+        InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        if (interfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        //调用接口
+        User loginUser = userService.getLoginUser(request);
+        String accessKey = loginUser.getAccessKey();
+        String secretKey = loginUser.getSecretKey();
+        String userRequestParams = interfaceInvokeRequest.getUserRequestParams();
+        Gson gson = new Gson();
+        com.cjj.apiopenplatformclientsdk.model.User user = gson.fromJson(userRequestParams, com.cjj.apiopenplatformclientsdk.model.User.class);
+        APIOpenPlatformClient tempClient = new APIOpenPlatformClient(accessKey,secretKey);
+        String result = tempClient.getUsernameByPost(user);
+        return ResultUtils.success(result);
+    }
 }
