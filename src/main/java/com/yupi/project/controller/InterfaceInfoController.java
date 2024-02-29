@@ -279,6 +279,10 @@ public class InterfaceInfoController {
         if (interfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
+        // 判断接口是否为开启状态
+        if(interfaceInfo.getStatus() != InterfaceInfoStatusEnum.ONLINE.getValue()){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
         //调用接口
         User loginUser = userService.getLoginUser(request);
         String accessKey = loginUser.getAccessKey();
