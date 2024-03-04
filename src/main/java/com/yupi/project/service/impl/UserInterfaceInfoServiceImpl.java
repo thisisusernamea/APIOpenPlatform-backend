@@ -1,12 +1,11 @@
 package com.yupi.project.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cjj.apiplatformcommon.entity.UserInterfaceInfo;
 import com.yupi.project.common.ErrorCode;
 import com.yupi.project.exception.BusinessException;
-import com.yupi.project.model.entity.UserInterfaceInfo;
-import com.yupi.project.service.UserInterfaceInfoService;
 import com.yupi.project.mapper.UserInterfaceInfoMapper;
-import org.apache.commons.lang3.StringUtils;
+import com.yupi.project.service.UserInterfaceInfoService;
 import org.springframework.stereotype.Service;
 
 /**

@@ -1,7 +1,7 @@
 package com.yupi.project.service;
 
-import com.yupi.project.model.entity.UserInterfaceInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.cjj.apiplatformcommon.entity.UserInterfaceInfo;
 
 /**
 * @author 常俊杰

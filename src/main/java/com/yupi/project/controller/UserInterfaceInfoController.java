@@ -3,6 +3,8 @@ package com.yupi.project.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cjj.apiopenplatformclientsdk.client.APIOpenPlatformClient;
+import com.cjj.apiplatformcommon.entity.User;
+import com.cjj.apiplatformcommon.entity.UserInterfaceInfo;
 import com.yupi.project.annotation.AuthCheck;
 import com.yupi.project.common.BaseResponse;
 import com.yupi.project.common.DeleteRequest;
@@ -13,8 +15,6 @@ import com.yupi.project.exception.BusinessException;
 import com.yupi.project.model.dto.userinterfaceinfo.UserInterfaceInfoAddRequest;
 import com.yupi.project.model.dto.userinterfaceinfo.UserInterfaceInfoQueryRequest;
 import com.yupi.project.model.dto.userinterfaceinfo.UserInterfaceInfoUpdateRequest;
-import com.yupi.project.model.entity.User;
-import com.yupi.project.model.entity.UserInterfaceInfo;
 import com.yupi.project.service.UserInterfaceInfoService;
 import com.yupi.project.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/userInterfaceInfo")
 @Slf4j
-public class UserUserInterfaceInfoController {
+public class UserInterfaceInfoController {
 
     @Resource
     private UserInterfaceInfoService userInterfaceInfoService;

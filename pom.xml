@@ -101,6 +101,24 @@
             <artifactId>apiopenplatform-client-sdk</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.dubbo/dubbo-spring-boot-starter -->
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-spring-boot-starter</artifactId>
+            <version>3.0.8</version>
+        </dependency>
+        <!--zookeeper客户端：包含curator-framework、curator-recipes这两个依赖-->
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-x-discovery</artifactId>
+            <version>5.2.1</version>
+        </dependency>
+        <!-- apiopenplatform-common -->
+        <dependency>
+            <groupId>com.cjj</groupId>
+            <artifactId>apiopenplatform-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>

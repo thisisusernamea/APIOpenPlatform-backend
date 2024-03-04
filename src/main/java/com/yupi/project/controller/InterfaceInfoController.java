@@ -1,21 +1,25 @@
 package com.yupi.project.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cjj.apiopenplatformclientsdk.client.APIOpenPlatformClient;
+import com.cjj.apiplatformcommon.entity.InterfaceInfo;
+import com.cjj.apiplatformcommon.entity.User;
+import com.cjj.apiplatformcommon.entity.UserInterfaceInfo;
 import com.google.gson.Gson;
 import com.yupi.project.annotation.AuthCheck;
 import com.yupi.project.common.*;
 import com.yupi.project.constant.CommonConstant;
+import com.yupi.project.constant.UserInterfaceInfoConstant;
 import com.yupi.project.exception.BusinessException;
 import com.yupi.project.model.dto.interfaceinfo.InterfaceInfoAddRequest;
 import com.yupi.project.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.yupi.project.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
 import com.yupi.project.model.dto.interfaceinfo.InterfaceInvokeRequest;
-import com.yupi.project.model.entity.InterfaceInfo;
-import com.yupi.project.model.entity.User;
 import com.yupi.project.model.enums.InterfaceInfoStatusEnum;
 import com.yupi.project.service.InterfaceInfoService;
+import com.yupi.project.service.UserInterfaceInfoService;
 import com.yupi.project.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +48,9 @@ public class InterfaceInfoController {
 
     @Resource
     private APIOpenPlatformClient apiOpenPlatformClient;
+
+    @Resource
+    private UserInterfaceInfoService userInterfaceInfoService;
 
     // region 增删改查
 
@@ -270,21 +277,37 @@ public class InterfaceInfoController {
     @PostMapping("/invoke")
     public BaseResponse<Object> invokeInterface(@RequestBody InterfaceInvokeRequest interfaceInvokeRequest,
                                                       HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
         if(interfaceInvokeRequest == null || interfaceInvokeRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long id = interfaceInvokeRequest.getId();
-        // 判断接口是否存在
+        //1. 判断接口是否存在
         InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
         if (interfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        // 判断接口是否为开启状态
+        //2. 判断接口是否为开启状态
         if(interfaceInfo.getStatus() != InterfaceInfoStatusEnum.ONLINE.getValue()){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
-        //调用接口
-        User loginUser = userService.getLoginUser(request);
+        //3.调用接口
+        Long loginUserId = loginUser.getId();
+        Long interfaceId = interfaceInvokeRequest.getId();
+        //当前用户第一次调用接口,创建用户接口关系记录
+        LambdaQueryWrapper<UserInterfaceInfo> userInterfaceInfoLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        userInterfaceInfoLambdaQueryWrapper.eq(UserInterfaceInfo::getUserId, loginUserId);
+        userInterfaceInfoLambdaQueryWrapper.eq(UserInterfaceInfo::getInterfaceInfoId,interfaceId);
+        UserInterfaceInfo userInterfaceInfo = userInterfaceInfoService.getOne(userInterfaceInfoLambdaQueryWrapper);
+        if(userInterfaceInfo == null){
+            userInterfaceInfo = new UserInterfaceInfo();
+            userInterfaceInfo.setUserId(loginUserId);
+            userInterfaceInfo.setInterfaceInfoId(interfaceId);
+            userInterfaceInfo.setTotalNum(UserInterfaceInfoConstant.TOTAL_NUM);
+            userInterfaceInfo.setLeftNum(UserInterfaceInfoConstant.LEFT_NUM);
+            userInterfaceInfoService.save(userInterfaceInfo);
+        }
+        //http客户端调用相应的接口方法
         String accessKey = loginUser.getAccessKey();
         String secretKey = loginUser.getSecretKey();
         String userRequestParams = interfaceInvokeRequest.getUserRequestParams();
